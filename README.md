@@ -4,7 +4,7 @@ A GraphQL API for content claims.
 
 ## Usage
 
-The API can be queried at: https://graphql.claims.web3.storage
+The API can be queried at: https://graphql.claims.dag.haus
 
 ### Example
 
