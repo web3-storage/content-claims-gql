@@ -1,0 +1,176 @@
+"""
+Publishers post verifiable claims about IPFS data they publish in remote
+storage devices into Content Discovery networks and services.
+
+From these claims, IPFS clients can request data directly from remote storage
+devices over standard transports like HTTP.
+
+With content claims, any actor can provide data into the network without making
+the data available over an IPFS aware transport protocol. Rather than "serving"
+the data, content providers post verifiable claims about the data and its
+location.
+
+Clients can use these claims to read directly, over any existing transport
+(mostly HTTP), and in the act of reading the data will verify the related
+claims.
+
+This removes a substantial source of cost from providing content into the
+network. Content can be published into the network "at rest" on any permanent
+or temporary storage device that supports reading over HTTP.
+
+The requirements for content claims break down into a few isolated components,
+each representing a specific claim. These claims are assembled together to
+represent the proof information necessary for retrieving content.
+
+All claim types map a single CID to "claim information."
+
+While you can derive block indexes from these claims (see: Inclusion Claims),
+each individual claim is indexed by a single significant CID (file root, dir
+root, etc) referrenced by content field.
+
+These claims include examples of a unixfs file encoded into CAR files, but the
+protocol itself makes heavy use of CIDs in order to support a variety of future
+protocols and other use cases.
+
+Since this protocol builds upon the UCAN Invocation Specification, all of these
+claims are contained within a message from an issuer to a destination. This
+means it can be used to send specific actors unique route information apart
+from public content discovery networks, and can also be used to send messages
+to public content discovery networks by simply addressing them to a DID
+representing the discovery network.
+"""
+interface ContentClaim {
+  """
+  Subject of the claim e.g. CAR CID, DAG root CID etc.
+  """
+  content: ID!
+}
+
+"""
+A claim that a CID is available at a URL.
+"""
+type LocationClaim implements ContentClaim {
+  """
+  Subject of the claim e.g. CAR CID, DAG root CID etc.
+  """
+  content: ID!
+  """
+  URL(s) where the content may be retrieved from.
+  """
+  location: [String!]!
+  """
+  Byte Range in URL.
+  """
+  range: ByteRange
+}
+
+"""
+A claim that a CID's graph can be read from the blocks found in parts.
+"""
+type PartitionClaim implements ContentClaim {
+  """
+  Subject of the claim e.g. CAR CID, DAG root CID etc.
+  """
+  content: ID!
+  """
+  CIDs CID - the hash of the binary sorted ContentLinks in the set.
+  """
+  blocks: String
+  """
+  List of archives (CAR CIDs) containing the blocks.
+  """
+  parts: [ContentLink!]!
+}
+
+"""
+A claim that a CID includes the contents claimed in another CID.
+"""
+type InclusionClaim implements ContentClaim {
+  """
+  Subject of the claim e.g. CAR CID, DAG root CID etc.
+  """
+  content: ID!
+  """
+  e.g. CARv2 Index CID or Sub-Deal CID (CommP)
+  """
+  includes: ContentLink!
+  """
+  Zero-knowledge proof
+  """
+  proof: String
+}
+
+"""
+Claims that a CID links to other CIDs. Like a partition claim crossed with an
+inclusion claim, a relation claim asserts that a block of content links to
+other blocks, and that the block and it's links may be found in the specified
+parts.
+
+Furthermore, for each part you can optionally specify an inline inclusion claim
+(specifying what is included in the part) and for each inclusion an optional
+inline partition claim (specifying parts in which the inclusion CID may be
+found).
+"""
+type RelationClaim implements ContentClaim {
+  """
+  Subject of the claim e.g. CAR CID, DAG root CID etc.
+  """
+  content: ID!
+  """
+  CIDs of blocks this content directly ContentLinks to.
+  """
+  children: [String!]!
+  """
+  List of archives (CAR CIDs) containing the blocks.
+  """
+  parts: [RelationPart!]!
+}
+
+"""
+Part this content and it's children can be read from.
+"""
+type RelationPart {
+  """
+  Part CID.
+  """
+  content: String!
+  """
+  CID of contents (CARv2 index) included in this part.
+  """
+  includes: RelationPartInclusion
+}
+
+type RelationPartInclusion {
+  """
+  Inclusion CID (CARv2 index)
+  """
+  content: String!
+  """
+  CIDs of parts this index may be found in.
+  """
+  parts: [ContentLink!]
+}
+
+type ByteRange {
+  offset: Int!
+  length: Int
+}
+
+"""
+An IPLD link (CID) to content, including claims made for it.
+"""
+type ContentLink {
+  content: String!
+  claims: [ContentClaim!]!
+}
+
+"""
+Content Claims queries.
+"""
+type Query {
+  """
+  Read Content Claims by content CID.
+  """
+  read (content: String!): [ContentClaim!]!
+}
+
