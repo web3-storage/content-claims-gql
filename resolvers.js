@@ -21,6 +21,8 @@ export const resolvers = {
           return 'InclusionClaim'
         case Assert.relation.can:
           return 'RelationClaim'
+        case Assert.equals.can:
+          return 'EqualsClaim'
       }
     }
   },
@@ -73,6 +75,12 @@ const toGraphQLType = claim => {
               }
             : null
         }))
+      }
+    case Assert.equals.can:
+      return {
+        type: claim.type,
+        content: claim.content.toString(),
+        equals: { content: claim.equals.toString() }
       }
     default:
       throw new Error(`unknown claim: ${claim.type}`)

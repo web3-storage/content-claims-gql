@@ -23,6 +23,9 @@ query Query {
     },
     ... on RelationClaim {
       # ...
+    },
+    ... on EqualsClaim {
+      # ...
     }
   }
 }

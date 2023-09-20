@@ -127,6 +127,20 @@ type RelationClaim implements ContentClaim {
 }
 
 """
+A claim that the same data is referred to by another CID and/or multihash.
+"""
+type EqualsClaim implements ContentClaim {
+  """
+  Subject of the claim e.g. CAR CID, DAG root CID etc.
+  """
+  content: ID!
+  """
+  A CID that is equivalent to the content CID e.g the Piece CID for that CAR CID.
+  """
+  equals: ContentLink!
+}
+
+"""
 Part this content and it's children can be read from.
 """
 type RelationPart {
